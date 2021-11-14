@@ -1,0 +1,6 @@
+caravel
+precheck_results
+*.vcd
+*.hex
+*vcd.gz.*
+
