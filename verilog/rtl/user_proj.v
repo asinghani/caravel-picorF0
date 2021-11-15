@@ -13,10 +13,12 @@
 // limitations under the License.
 // SPDX-License-Identifier: Apache-2.0
 
-`default_nettype none
 
 `include "CoreTop.v"
+`include "CanTop.v"
 `include "game.v"
+
+`default_nettype none
 
 module user_proj #(
     parameter BITS = 32
@@ -57,15 +59,19 @@ module user_proj #(
     wire [`MPRJ_IO_PADS-1:0] io_oeb;
 
     // IO
-    assign io_out[`MPRJ_IO_PADS-1:22] = '0;
+    assign io_out[`MPRJ_IO_PADS-1:33] = '0;
+    assign io_out[28:22] = '0;
     assign io_out[7:0] = '0;
     assign io_oeb = '0;
 
+    // CAN input: 28
     // Buttons: 27, 26, 25, 24, 23, 22
-    assign io_oeb[27:22] = '1;
+    assign io_oeb[28:22] = '1;
 
     // IRQ
     assign irq = 3'b000;	// Unused
+
+    assign wbs_dat_o[31:8] = '0;
 
     game_wrapper pong (
         .VGA_R3(io_out[19]),
@@ -96,6 +102,24 @@ module user_proj #(
         .clk_25mhz(wb_clk_i)
     );
 
+    CanTop canbus (
+        .clock(wb_clk_i),
+        .reset(wb_rst_i),
+        .io_wbClkI(wb_clk_i),
+        .io_wbDatI(wbs_dat_i[7:0]),
+        .io_wbDatO(wbs_dat_o[7:0]),
+        .io_wbCycI(wbs_cyc_i),
+        .io_wbStbI(wbs_stb_i),
+        .io_wbWeI(wbs_we_i),
+        .io_wbAddrI(wbs_adr_i),
+        .io_wbAckO(wbs_ack_o),
+        .io_canRx(io_in[28]),
+        .io_canTx(io_out[29]),
+        .io_busOffOn(io_out[30]),
+        .io_irqOn(io_out[31]),
+        .io_clkout(io_out[32])
+    );
+
     CoreTop core (
         .clock(wb_clk_i),
         .reset(wb_rst_i),
@@ -103,8 +127,6 @@ module user_proj #(
         .io_la_data_out(la_data_out),
         .io_la_oenb(la_oenb)
     );
-
-
 
 endmodule
 
